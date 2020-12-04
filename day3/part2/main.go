@@ -31,9 +31,17 @@ func main() {
 		matrix = append(matrix, row)
 	}
 
-	rise := 1
-	run := 3
+	a := determineCount(1, 1, matrix)
+	b := determineCount(1, 3, matrix)
+	c := determineCount(1, 5, matrix)
+	d := determineCount(1, 7, matrix)
+	e := determineCount(2, 1, matrix)
 
+	fmt.Printf("Tree Count %d\n", a*b*c*d*e)
+
+}
+
+func determineCount(rise, run int, matrix [][]bool) int {
 	var treeCount int
 	var desiredJIndex int
 	for i := rise; i < len(matrix); i += rise {
@@ -52,6 +60,5 @@ func main() {
 		}
 	}
 
-	fmt.Printf("Tree Count %d\n", treeCount)
-
+	return treeCount
 }
