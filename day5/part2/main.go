@@ -60,26 +60,22 @@ func seatIDFromPass(pass string) int {
 			if i == 6 {
 				row = low
 			}
-			diff := int((high-low)/2) + 1
-			high = high - diff
+			high = high - (((high - low) / 2) + 1)
 		} else if c == 'B' {
 			if i == 6 {
 				row = high
 			}
-			diff := int((high-low)/2) + 1
-			low = low + diff
+			low = low + (((high - low) / 2) + 1)
 		} else if c == 'L' {
 			if i == 9 {
 				column = colLow
 			}
-			diff := int((colHigh-colLow)/2) + 1
-			colHigh = colHigh - diff
+			colHigh = colHigh - (((colHigh - colLow) / 2) + 1)
 		} else if c == 'R' {
 			if i == 9 {
 				column = colHigh
 			}
-			diff := int((colHigh-colLow)/2) + 1
-			colLow = colLow + diff
+			colLow = colLow + (((colHigh - colLow) / 2) + 1)
 		}
 	}
 
