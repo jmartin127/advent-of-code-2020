@@ -27,8 +27,8 @@ func main() {
 		instructions = append(instructions, parseInstruction(line))
 	}
 
-	y := 0
 	x := 0
+	y := 0
 	wx := 10
 	wy := 1
 	for _, i := range instructions {
@@ -43,17 +43,22 @@ func main() {
 		} else if i.direction == "W" {
 			wx -= i.num
 		} else if i.direction == "L" {
+			fmt.Printf("wx %d, wy %d\n", wx, wy)
 			wx, wy = rotateLeft(wx, wy, i.num)
+			fmt.Printf("a: wx %d, wy %d\n\n", wx, wy)
 		} else if i.direction == "R" {
+			fmt.Printf("wx %d, wy %d\n", wx, wy)
 			wx, wy = rotateRight(wx, wy, i.num)
+			fmt.Printf("a: wx %d, wy %d\n\n", wx, wy)
 		} else if i.direction == "F" {
 			x += wx * i.num
 			y += wy * i.num
 		}
-		fmt.Printf("x %d, y %d\n", x, y)
-		fmt.Printf("wx %d, wy %d\n", wx, wy)
+		//fmt.Printf("x %d, y %d\n", x, y)
+		//fmt.Printf("wx %d, wy %d\n", wx, wy)
 	}
 
+	fmt.Printf("x %d, y %d\n", x, y)
 	a := math.Abs(float64(x)) + math.Abs(float64(y))
 	fmt.Printf("A: %f\n", a)
 
@@ -81,6 +86,9 @@ func toPolar(x, y int) (float64, float64) {
 	if x < 0 && y < 0 {
 		r = r * -1
 	}
+	if x < 0 && y > 0 {
+		r = r * -1
+	}
 	a := math.Atan(float64(y) / float64(x))
 	return r, a
 }
@@ -89,8 +97,8 @@ func toCartesian(r, a float64) (int, int) {
 	x := r * math.Cos(a)
 	y := r * math.Sin(a)
 
-	intX := int(math.Round(x))
-	intY := int(math.Round(y))
+	intX := int(math.RoundToEven(x))
+	intY := int(math.RoundToEven(y))
 	return intX, intY
 }
 
