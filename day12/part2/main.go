@@ -69,6 +69,7 @@ func rotateLeft(x, y, degrees int) (int, int) {
 
 	times := float64(degrees / 90) // number of 90 degree intervals
 	a = a + (times * math.Pi / 2)
+
 	return toCartesian(r, a)
 }
 
@@ -83,13 +84,7 @@ func rotateRight(x, y, degrees int) (int, int) {
 
 func toPolar(x, y int) (float64, float64) {
 	r := math.Sqrt(float64(x*x + y*y))
-	if x < 0 && y < 0 {
-		r = r * -1
-	}
-	if x < 0 && y > 0 {
-		r = r * -1
-	}
-	a := math.Atan(float64(y) / float64(x))
+	a := math.Atan2(float64(y), float64(x))
 	return r, a
 }
 
@@ -99,6 +94,7 @@ func toCartesian(r, a float64) (int, int) {
 
 	intX := int(math.RoundToEven(x))
 	intY := int(math.RoundToEven(y))
+
 	return intX, intY
 }
 
