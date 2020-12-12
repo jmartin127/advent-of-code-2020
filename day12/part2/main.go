@@ -32,8 +32,6 @@ func main() {
 	wx := 10
 	wy := 1
 	for _, i := range instructions {
-		fmt.Printf("instruction %+v\n", i)
-
 		if i.direction == "N" {
 			wy += i.num
 		} else if i.direction == "S" {
@@ -43,25 +41,17 @@ func main() {
 		} else if i.direction == "W" {
 			wx -= i.num
 		} else if i.direction == "L" {
-			fmt.Printf("wx %d, wy %d\n", wx, wy)
 			wx, wy = rotateLeft(wx, wy, i.num)
-			fmt.Printf("a: wx %d, wy %d\n\n", wx, wy)
 		} else if i.direction == "R" {
-			fmt.Printf("wx %d, wy %d\n", wx, wy)
 			wx, wy = rotateRight(wx, wy, i.num)
-			fmt.Printf("a: wx %d, wy %d\n\n", wx, wy)
 		} else if i.direction == "F" {
 			x += wx * i.num
 			y += wy * i.num
 		}
-		//fmt.Printf("x %d, y %d\n", x, y)
-		//fmt.Printf("wx %d, wy %d\n", wx, wy)
 	}
 
-	fmt.Printf("x %d, y %d\n", x, y)
 	a := math.Abs(float64(x)) + math.Abs(float64(y))
-	fmt.Printf("A: %f\n", a)
-
+	fmt.Printf("Answer: %f\n", a)
 }
 
 func rotateLeft(x, y, degrees int) (int, int) {
