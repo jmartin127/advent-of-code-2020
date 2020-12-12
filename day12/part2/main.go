@@ -61,13 +61,17 @@ func main() {
 
 func rotateLeft(x, y, degrees int) (int, int) {
 	r, a := toPolar(x, y)
-	a = a + float64(degrees)*0.0174533
+
+	times := float64(degrees / 90) // number of 90 degree intervals
+	a = a + (times * math.Pi / 2)
 	return toCartesian(r, a)
 }
 
 func rotateRight(x, y, degrees int) (int, int) {
 	r, a := toPolar(x, y)
-	a = a - float64(degrees)*0.0174533
+
+	times := float64(degrees / 90) // number of 90 degree intervals
+	a = a - (times * math.Pi / 2)
 
 	return toCartesian(r, a)
 }
