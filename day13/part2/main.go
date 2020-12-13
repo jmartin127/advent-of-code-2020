@@ -3,10 +3,13 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"math/big"
 	"os"
 	"strconv"
 	"strings"
 )
+
+var one = big.NewInt(1)
 
 type busID struct {
 	hasValue bool
@@ -27,34 +30,66 @@ func main() {
 		busIDs = lineToBusIDs(line)
 	}
 
-	for i := 100000000000000; true; i++ {
-		conditionMet := true
-		for t, busID := range busIDs {
-			if busID.hasValue {
-				//fmt.Printf("Checking %d\n", busID.id+t)
-				if (i+t)%(busID.id) != 0 {
-					conditionMet = false
-					break
-				}
-			} else {
-				// condition is met
-			}
-		}
+	// n := []*big.Int{
+	// 	big.NewInt(7),
+	// 	big.NewInt(13),
+	// 	big.NewInt(59),
+	// 	big.NewInt(31),
+	// 	big.NewInt(19),
+	// }
+	// a := []*big.Int{
+	// 	big.NewInt(0), // 0 --> 7
+	// 	big.NewInt(1), // 1 --> 6
+	// 	big.NewInt(4), // 4 --> 3
+	// 	big.NewInt(6), // 6 --> 1
+	// 	big.NewInt(7), // 7 --> 0
+	// }
 
-		if conditionMet {
-			fmt.Printf("Answer %d\n", i)
-			os.Exit(0)
+	n, a := generateCrtInput(busIDs)
+	answer, err := crt(a, n)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(answer.Int64() - int64(len(busIDs)-1))
+	//fmt.Println(answer.Int64() - int64(busIDs[0].id))
+}
+
+func generateCrtInput(ids []busID) ([]*big.Int, []*big.Int) {
+	n := make([]*big.Int, 0)
+	a := make([]*big.Int, 0)
+
+	max := len(ids) - 1
+	for t, id := range ids {
+		if id.hasValue {
+			n = append(n, big.NewInt(int64(id.id)))
+			a = append(a, big.NewInt(int64(max-t)))
 		}
 	}
 
+	return n, a
+}
+
+func crt(a, n []*big.Int) (*big.Int, error) {
+	p := new(big.Int).Set(n[0])
+	for _, n1 := range n[1:] {
+		p.Mul(p, n1)
+	}
+	var x, q, s, z big.Int
+	for i, n1 := range n {
+		q.Div(p, n1)
+		z.GCD(nil, &s, n1, &q)
+		if z.Cmp(one) != 0 {
+			return nil, fmt.Errorf("%d not coprime", n1)
+		}
+		x.Add(&x, s.Mul(a[i], s.Mul(&s, &q)))
+	}
+	return x.Mod(&x, p), nil
 }
 
 func lineToBusIDs(line string) []busID {
 	busIDs := make([]busID, 0)
 
-	fmt.Printf("LINE %+v", line)
 	vals := strings.Split(line, ",")
-	fmt.Printf("Vals %+v", vals)
 	for _, v := range vals {
 		var b busID
 		if v == "x" {
