@@ -24,28 +24,52 @@ func main() {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	//var busIDs []busID
+	var busIDs []busID
 	for scanner.Scan() {
-		//line := scanner.Text()
-		//busIDs = lineToBusIDs(line)
+		line := scanner.Text()
+		busIDs = lineToBusIDs(line)
 	}
 
-	n := []*big.Int{
-		big.NewInt(7),
-		big.NewInt(13),
-		big.NewInt(59),
-		big.NewInt(31),
-		big.NewInt(19),
-	}
-	a := []*big.Int{
-		big.NewInt(0), // 0 --> 7
-		big.NewInt(1), // 1 --> 6
-		big.NewInt(4), // 4 --> 3
-		big.NewInt(6), // 6 --> 1
-		big.NewInt(7), // 7 --> 0
-	}
-	fmt.Println(crt(a, n))
+	// n := []*big.Int{
+	// 	big.NewInt(7),
+	// 	big.NewInt(13),
+	// 	big.NewInt(59),
+	// 	big.NewInt(31),
+	// 	big.NewInt(19),
+	// }
+	// a := []*big.Int{
+	// 	big.NewInt(0), // 0 --> 7
+	// 	big.NewInt(1), // 1 --> 6
+	// 	big.NewInt(4), // 4 --> 3
+	// 	big.NewInt(6), // 6 --> 1
+	// 	big.NewInt(7), // 7 --> 0
+	// }
 
+	n, a := generateCrtInput(busIDs)
+	answer, err := crt(a, n)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(answer.Int64() - int64(len(busIDs)-1))
+	//fmt.Println(answer.Int64() - int64(busIDs[0].id))
+}
+
+func generateCrtInput(ids []busID) ([]*big.Int, []*big.Int) {
+	n := make([]*big.Int, 0)
+	a := make([]*big.Int, 0)
+
+	max := len(ids) - 1
+	for t, id := range ids {
+		if id.hasValue {
+			n = append(n, big.NewInt(int64(id.id)))
+			a = append(a, big.NewInt(int64(max-t)))
+
+			fmt.Printf("Appending %d, %d\n", id.id, max-t)
+		} else {
+		}
+	}
+
+	return n, a
 }
 
 func crt(a, n []*big.Int) (*big.Int, error) {
@@ -68,9 +92,7 @@ func crt(a, n []*big.Int) (*big.Int, error) {
 func lineToBusIDs(line string) []busID {
 	busIDs := make([]busID, 0)
 
-	fmt.Printf("LINE %+v", line)
 	vals := strings.Split(line, ",")
-	fmt.Printf("Vals %+v", vals)
 	for _, v := range vals {
 		var b busID
 		if v == "x" {
