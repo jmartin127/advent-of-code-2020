@@ -55,17 +55,13 @@ func main() {
 	}
 	groups = append(groups, currentGroup)
 
-	fmt.Printf("num groups %d\n", len(groups))
-
-	memory := make([]int, 100000)
-	for i, g := range groups {
-		fmt.Printf("Processing group %d\n", i)
+	memory := make(map[int]int, 0)
+	for _, g := range groups {
 		// loop through each memory update
 		for _, m := range g.mem {
 			afterMaskValues := applyMask(m.address, g.mask)
 			for _, a := range afterMaskValues {
 				memory[a] = m.val
-				//fmt.Printf("Setting memory index %d to %d\n", a, m.val)
 			}
 		}
 	}
@@ -74,18 +70,12 @@ func main() {
 	for _, v := range memory {
 		result += v
 	}
-	fmt.Printf("REsult %d\n", result)
+	fmt.Printf("Result %d\n", result)
 }
 
 func applyMask(input int, mask *mask) []int {
 	binary := decimalToBinary(input)
 	binaryArray := stringToArray(paddedString(binary))
-	if len(binaryArray) != 36 {
-		os.Exit(1)
-	}
-	//fmt.Printf("binaryArray %+v\n", binaryArray)
-	//fmt.Printf("input %+v\n", binaryArray)
-	//fmt.Printf("mask  %+v\n", mask.val)
 
 	result := make([]string, 0)
 	for i, m := range mask.val {
@@ -101,7 +91,6 @@ func applyMask(input int, mask *mask) []int {
 		}
 		result = append(result, r)
 	}
-	//fmt.Printf("result %+v\n", result)
 
 	v := strings.Join(result, "")
 
@@ -110,7 +99,6 @@ func applyMask(input int, mask *mask) []int {
 	finalResult := make([]int, 0)
 	for _, b := range allPossible {
 		d := binaryToDecimal(b)
-		//fmt.Printf("Decimal %d, Binary %s\n", d, b)
 		finalResult = append(finalResult, d)
 	}
 	return finalResult
@@ -118,8 +106,6 @@ func applyMask(input int, mask *mask) []int {
 
 // 000000000000000000000000000000X1101X
 func allPossibleBinaryStrings(input []string) []string {
-	//fmt.Printf("Input to all possible %s\n", input[0])
-
 	for true {
 		var numModified int
 		result := make([]string, 0)
