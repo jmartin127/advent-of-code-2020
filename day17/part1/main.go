@@ -75,9 +75,9 @@ func main() {
 
 	// apply cycles
 	fmt.Printf("size %d\n", c.size())
-	for i := 0; i < 1; i++ {
+	for i := 0; i < 6; i++ {
 		c = applyCycle(c)
-		c.printCube()
+		//c.printCube()
 		fmt.Printf("result %d\n", c.numInActiveState())
 	}
 }
@@ -134,13 +134,20 @@ func (c *cube) numActiveNeighbors(x, y, z int) int {
 	for i := x - 1; i <= x+1; i++ {
 		for j := y - 1; j <= y+1; j++ {
 			for k := z - 1; k <= z+1; k++ {
-				if c.inBounds(i, j, k) && c.plates[k].rows[j].vals[i] {
+				if c.inBounds(i, j, k) && c.plates[k].rows[j].vals[i] && !isSelf(x, y, z, i, j, k) {
 					numActive++
 				}
 			}
 		}
 	}
 	return numActive
+}
+
+func isSelf(x, y, z int, i, j, k int) bool {
+	if x == i && y == j && z == k {
+		return true
+	}
+	return false
 }
 
 func (c *cube) inBounds(x, y, z int) bool {
