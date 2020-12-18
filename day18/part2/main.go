@@ -102,6 +102,7 @@ func solveExpression(tokens []*token) int {
 }
 
 // 2 * 1 + 1 + 2 * 3 + 4 * 5 + 6  -->   2 * 4 * 7 * 11
+// recursively add the first pair we find
 func reducePlus(tokens []*token) []*token {
 	if !hasPlus(tokens) {
 		return tokens
