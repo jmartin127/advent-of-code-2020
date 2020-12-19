@@ -70,7 +70,6 @@ func main() {
 	rule42 := getRule("42", result)
 
 	for _, m := range messages {
-		fmt.Printf("\n%s\n", m)
 		if messageMatchesNewRule(m, rule42.getResolved(), rule31.getResolved()) {
 			valid[m] = true
 		}
@@ -174,7 +173,6 @@ func reduceRuleset(rules []*rule) []*rule {
 
 	for _, r := range rules {
 		substituteForRule(resolved, r)
-		//fmt.Printf("Rule %+v\n", r)
 	}
 
 	return reduceRuleset(rules)
@@ -206,8 +204,6 @@ func substituteForRule(resolved map[string]*rule, r *rule) {
 //
 // OR just a single number
 func resolveSubset(subset []string, resolved map[string]*rule) (bool, []string) {
-	//fmt.Printf("RESOLVE SUBSET %+v\n", subset)
-
 	if len(subset) == 1 {
 		resolvedLeft, ok := resolved[subset[0]]
 		if !ok {
