@@ -192,19 +192,22 @@ func main() {
 	firstCorner = rotateTile90DegressLeft(firstCorner)
 	firstCorner = rotateTile90DegressLeft(firstCorner)
 	firstCorner = flipTileHorizontal(firstCorner)
+	fmt.Printf("Starting piece %d\n", firstCorner.id)
+	firstCorner.print()
+	firstCorner = orientStartingPiece(firstCorner, edges)
+	fmt.Printf("Starting piece AGAIN %d\n", firstCorner.id)
+	firstCorner.print()
 
+	// Add the corner piece to the puzzle
 	p := newPuzzle(size)
 	p.matrix[0][0] = firstCorner
 	remainingCorners := removeTileFromSlice(firstCorner, corners)
-	fmt.Printf("Starting piece\n")
-	firstCorner.print()
 
 	// Build out the top edge
 	remainingEdges, remainingCorners := buildTopEdge(firstCorner, p, edges, remainingCorners)
 	fmt.Printf("Num edges after building first edge %d\n", len(remainingEdges))
 	fmt.Printf("Num corners after building first edge %d\n", len(remainingCorners))
 	fmt.Printf("Puzzle after doing top edge:\n")
-	p.print()
 
 	// Put the rest of the pieces in the box
 	remaining := make([]*tile, 0)
@@ -213,12 +216,10 @@ func main() {
 	remaining = addToSlice(remaining, remainingEdges)
 
 	// Build each row
-	remaining = addRowToPuzzle(p, 1, remaining)
-	fmt.Printf("Puzzle after doing middle row:\n")
-	p.print()
-
-	remaining = addRowToPuzzle(p, 2, remaining)
-	fmt.Printf("Puzzle after doing last row:\n")
+	for i := 1; i < size; i++ {
+		remaining = addRowToPuzzle(p, i, remaining)
+	}
+	fmt.Println("FINAL PUZZLE")
 	p.print()
 }
 
