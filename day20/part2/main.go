@@ -206,16 +206,20 @@ func main() {
 	fmt.Printf("Puzzle after doing top edge:\n")
 	p.print()
 
-	// // Put the rest of the pieces in the box
-	// remaining := make([]*tile, 0)
-	// remaining = addToSlice(remaining, middle)
-	// remaining = addToSlice(remaining, remainingCorners)
-	// remaining = addToSlice(remaining, remainingEdges)
+	// Put the rest of the pieces in the box
+	remaining := make([]*tile, 0)
+	remaining = addToSlice(remaining, middle)
+	remaining = addToSlice(remaining, remainingCorners)
+	remaining = addToSlice(remaining, remainingEdges)
 
-	// // Build each row
-	// remaining = addRowToPuzzle(p, 1, remaining)
-	// fmt.Printf("Puzzle after doing middle row:\n")
-	// p.print()
+	// Build each row
+	remaining = addRowToPuzzle(p, 1, remaining)
+	fmt.Printf("Puzzle after doing middle row:\n")
+	p.print()
+
+	remaining = addRowToPuzzle(p, 2, remaining)
+	fmt.Printf("Puzzle after doing last row:\n")
+	p.print()
 }
 
 func orientStartingPiece(t *tile, edges []*tile) *tile {
