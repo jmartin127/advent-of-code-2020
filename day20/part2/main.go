@@ -38,6 +38,10 @@ func (sm *seaMonster) width() int {
 	return 20
 }
 
+func (sm *seaMonster) numWavesInMonster() int {
+	return 15
+}
+
 func newPuzzle(size int) *puzzle {
 	matrix := make([][]*tile, 0)
 
@@ -326,40 +330,134 @@ func main() {
 	cp.print()
 
 	// Look for sea monsters!
-	numSeaMonsters := cp.numSeaMonstersInThisOrientation()
+	numSeaMonsters := cp.findSeaMonsters()
 	fmt.Printf("Num sea monsters %d\n", numSeaMonsters)
+
+	// Print the result!
+	sm := seaMonster{}
+	fmt.Printf("Total waves %d\n", cp.numTotalWaves())
+	fmt.Printf("Answer! %d\n", cp.numTotalWaves()-(numSeaMonsters*sm.numWavesInMonster()))
 }
 
-func (cp *completedPuzzle) numSeaMonstersInThisOrientation() int {
-	str := cp.asString()
-	return numSeaMonstersInString(str)
+func (cp *completedPuzzle) numTotalWaves() int {
+	var result int
+	for _, r := range cp.matrix {
+		for _, v := range r {
+			if v {
+				result++
+			}
+		}
+	}
+
+	return result
+}
+
+func (cp *completedPuzzle) findSeaMonsters() int {
+	numMonsters := numSeaMonstersInString(cp.asString())
+	if numMonsters > 0 {
+		return numMonsters
+	}
+
+	cp.rotateLeft90Degrees()
+	numMonsters = numSeaMonstersInString(cp.asString())
+	if numMonsters > 0 {
+		return numMonsters
+	}
+
+	cp.rotateLeft90Degrees()
+	numMonsters = numSeaMonstersInString(cp.asString())
+	if numMonsters > 0 {
+		return numMonsters
+	}
+
+	cp.rotateLeft90Degrees()
+	numMonsters = numSeaMonstersInString(cp.asString())
+	if numMonsters > 0 {
+		return numMonsters
+	}
+
+	// flip it
+	cp.flip()
+	numMonsters = numSeaMonstersInString(cp.asString())
+	if numMonsters > 0 {
+		return numMonsters
+	}
+
+	cp.rotateLeft90Degrees()
+	numMonsters = numSeaMonstersInString(cp.asString())
+	if numMonsters > 0 {
+		return numMonsters
+	}
+
+	cp.rotateLeft90Degrees()
+	numMonsters = numSeaMonstersInString(cp.asString())
+	if numMonsters > 0 {
+		return numMonsters
+	}
+
+	cp.rotateLeft90Degrees()
+	numMonsters = numSeaMonstersInString(cp.asString())
+	if numMonsters > 0 {
+		return numMonsters
+	}
+
+	return numMonsters
+}
+
+func (cp *completedPuzzle) flip() {
+	for rowIndex, r := range cp.matrix {
+		newRow := reverseBools(r)
+		cp.matrix[rowIndex] = newRow
+	}
+}
+
+func flipTileHorizontal(o *tile) *tile {
+	//fmt.Printf("\nFLIP!!!\n")
+	//o.print()
+	t := o.copy()
+
+	result := newTile(t.id)
+	for _, r := range t.image {
+		newRow := reverseBools(r.vals)
+		result.image = append(result.image, &row{
+			vals: newRow,
+		})
+	}
+
+	//fmt.Printf("\nAFTER FLIP!!!\n")
+	//result.print()
+	return result
 }
 
 func (cp *completedPuzzle) rotateLeft90Degrees() {
 	N := len(cp.matrix)
 
 	// Consider all squares one by one
-	for x := 0; x < len(t.image)/2; x++ {
+	for x := 0; x < N/2; x++ {
 		// Consider elements in group
 		// of 4 in current square
-		for y := x; y < len(t.image)-x-1; y++ {
+		for y := x; y < N-x-1; y++ {
 			// Store current cell in
 			// temp variable
-			temp := t.image[x].vals[y]
+			temp := cp.matrix[x][y]
 
 			// Move values from right to top
-			t.image[x].vals[y] = t.image[y].vals[N-1-x]
+			cp.matrix[x][y] = cp.matrix[y][N-1-x]
 
 			// Move values from bottom to right
-			t.image[y].vals[N-1-x] = t.image[N-1-x].vals[N-1-y]
+			cp.matrix[y][N-1-x] = cp.matrix[N-1-x][N-1-y]
 
 			// Move values from left to bottom
-			t.image[N-1-x].vals[N-1-y] = t.image[N-1-y].vals[x]
+			cp.matrix[N-1-x][N-1-y] = cp.matrix[N-1-y][x]
 
 			// Assign temp to left
-			t.image[N-1-y].vals[x] = temp
+			cp.matrix[N-1-y][x] = temp
 		}
 	}
+}
+
+func (cp *completedPuzzle) flipOver() {
+
 }
 
 func (cp *completedPuzzle) asString() string {
@@ -621,24 +719,6 @@ func compare4(t1 *tile, t2 *tile) bool {
 	}
 
 	return true
-}
-
-func flipTileHorizontal(o *tile) *tile {
-	//fmt.Printf("\nFLIP!!!\n")
-	//o.print()
-	t := o.copy()
-
-	result := newTile(t.id)
-	for _, r := range t.image {
-		newRow := reverseBools(r.vals)
-		result.image = append(result.image, &row{
-			vals: newRow,
-		})
-	}
-
-	//fmt.Printf("\nAFTER FLIP!!!\n")
-	//result.print()
-	return result
 }
 
 // flip it, and then swap top/bottom rows
