@@ -9,6 +9,10 @@ import (
 	"strings"
 )
 
+type completedPuzzle struct {
+	matrix [][]bool
+}
+
 type puzzle struct {
 	matrix [][]*tile
 }
@@ -38,6 +42,26 @@ func newPuzzle(size int) *puzzle {
 	}
 }
 
+func newComletedPuzzle() *completedPuzzle {
+	matrix := make([][]bool, 0)
+	return &completedPuzzle{
+		matrix: matrix,
+	}
+}
+
+func (cp *completedPuzzle) print() {
+	for _, r := range cp.matrix {
+		for _, v := range r {
+			if v {
+				fmt.Printf("%s", "#")
+			} else {
+				fmt.Printf("%s", ".")
+			}
+		}
+		fmt.Println()
+	}
+}
+
 func (p *puzzle) print() {
 	for _, r := range p.matrix {
 		for _, t := range r {
@@ -58,6 +82,28 @@ func (p *puzzle) removeTileEdges() {
 	}
 }
 
+func (p *puzzle) convertToCompletedPuzzle() *completedPuzzle {
+	tileHeight := p.matrix[0][0].numRows()
+	result := newComletedPuzzle()
+
+	// iterate over each row of tiles
+	for _, r := range p.matrix {
+		// iterate over each row
+		for i := 0; i < tileHeight; i++ {
+			completedRow := make([]bool, 0)
+
+			// iterate over this row for each tile (column), and append
+			for _, t := range r {
+				completedRow = append(completedRow, t.image[i].vals...)
+			}
+
+			result.matrix = append(result.matrix, completedRow)
+		}
+	}
+
+	return result
+}
+
 func newTile(id int) *tile {
 	image := make([]*row, 0)
 	return &tile{
@@ -76,6 +122,10 @@ func (t *tile) copy() *tile {
 		id:    t.id,
 		image: newImage,
 	}
+}
+
+func (t *tile) numRows() int {
+	return len(t.image)
 }
 
 func (t *tile) removeEdges() *tile {
@@ -258,6 +308,15 @@ func main() {
 	fmt.Println("AFTER REMOVING EDGES")
 	p.removeTileEdges()
 	p.print()
+
+	// Combine into the ultimate puzzle!
+	cp := p.convertToCompletedPuzzle()
+	cp.print()
+
+	// Look for sea monsters!
+}
+
+func (cp *completedPuzzle) numSeaMonsters() int {
 
 }
 
