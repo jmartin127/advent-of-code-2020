@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 )
@@ -24,6 +25,17 @@ type tile struct {
 
 type row struct {
 	vals []bool
+}
+
+/*
+                  #
+#    ##    ##    ###
+ #  #  #  #  #  #
+*/
+type seaMonster struct{}
+
+func (sm *seaMonster) width() int {
+	return 20
 }
 
 func newPuzzle(size int) *puzzle {
@@ -314,10 +326,68 @@ func main() {
 	cp.print()
 
 	// Look for sea monsters!
+	numSeaMonsters := cp.numSeaMonstersInThisOrientation()
+	fmt.Printf("Num sea monsters %d\n", numSeaMonsters)
 }
 
-func (cp *completedPuzzle) numSeaMonsters() int {
+func (cp *completedPuzzle) numSeaMonstersInThisOrientation() int {
+	str := cp.asString()
+	return numSeaMonstersInString(str)
+}
 
+func (cp *completedPuzzle) rotateLeft90Degrees() {
+	N := len(cp.matrix)
+
+	// Consider all squares one by one
+	for x := 0; x < len(t.image)/2; x++ {
+		// Consider elements in group
+		// of 4 in current square
+		for y := x; y < len(t.image)-x-1; y++ {
+			// Store current cell in
+			// temp variable
+			temp := t.image[x].vals[y]
+
+			// Move values from right to top
+			t.image[x].vals[y] = t.image[y].vals[N-1-x]
+
+			// Move values from bottom to right
+			t.image[y].vals[N-1-x] = t.image[N-1-x].vals[N-1-y]
+
+			// Move values from left to bottom
+			t.image[N-1-x].vals[N-1-y] = t.image[N-1-y].vals[x]
+
+			// Assign temp to left
+			t.image[N-1-y].vals[x] = temp
+		}
+	}
+}
+
+func (cp *completedPuzzle) asString() string {
+	str := ""
+	for _, r := range cp.matrix {
+		str += convertRowToString(r)
+	}
+	return str
+}
+
+func convertRowToString(row []bool) string {
+	result := ""
+	for _, v := range row {
+		if v {
+			result += "#"
+		} else {
+			result += "."
+		}
+	}
+	return result
+}
+
+func numSeaMonstersInString(line string) int {
+	// so ugly lol (each group of parens is a line for the sea monster)
+	// NOTE this assumes 4 extra, need to change it for actualy num of extra padding
+	r := regexp.MustCompile(`([#\.]{18}[#]{1}[#\.]{1})[#.]{4}([#]{1}[#\.]{4}[#]{2}[#\.]{4}[#]{2}[#\.]{4}[#]{3})[#.]{4}([#\.]{1}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{3})`)
+	matches := r.FindAllStringIndex(line, -1)
+	return len(matches)
 }
 
 func orientStartingPiece(t *tile, edges []*tile) *tile {
@@ -573,10 +643,7 @@ func flipTileHorizontal(o *tile) *tile {
 
 // flip it, and then swap top/bottom rows
 func rotateTile90DegressLeft(o *tile) *tile {
-	//fmt.Printf("\nROTATE!!!\n")
-	//o.print()
 	t := o.copy()
-
 	N := len(t.image)
 
 	// Consider all squares one by one
@@ -602,8 +669,6 @@ func rotateTile90DegressLeft(o *tile) *tile {
 		}
 	}
 
-	//fmt.Printf("\nAFTER ROTATE!!!\n")
-	//t.print()
 	return t
 }
 
