@@ -50,6 +50,14 @@ func (p *puzzle) print() {
 	}
 }
 
+func (p *puzzle) removeTileEdges() {
+	for i, r := range p.matrix {
+		for j := range r {
+			p.matrix[i][j] = p.matrix[i][j].removeEdges()
+		}
+	}
+}
+
 func newTile(id int) *tile {
 	image := make([]*row, 0)
 	return &tile{
@@ -67,6 +75,30 @@ func (t *tile) copy() *tile {
 	return &tile{
 		id:    t.id,
 		image: newImage,
+	}
+}
+
+func (t *tile) removeEdges() *tile {
+	image := make([]*row, 0)
+	for i := 1; i < len(t.image)-1; i++ { // skip first/last
+		row := t.image[i]
+		image = append(image, row.removeFirstLast())
+	}
+
+	return &tile{
+		id:    t.id,
+		image: image,
+	}
+}
+
+func (r *row) removeFirstLast() *row {
+	vals := make([]bool, 0)
+	for i := 1; i < len(r.vals)-1; i++ { // skip first/last
+		vals = append(vals, r.vals[i])
+	}
+
+	return &row{
+		vals: vals,
 	}
 }
 
@@ -221,6 +253,12 @@ func main() {
 	}
 	fmt.Println("FINAL PUZZLE")
 	p.print()
+
+	// Remove the edges
+	fmt.Println("AFTER REMOVING EDGES")
+	p.removeTileEdges()
+	p.print()
+
 }
 
 func orientStartingPiece(t *tile, edges []*tile) *tile {
