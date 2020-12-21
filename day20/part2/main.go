@@ -213,7 +213,7 @@ Tile 2477:
 Tile 2609:
 */
 func main() {
-	file, err := os.Open("/Users/jeff.martin@getweave.com/go/src/github.com/jmartin127/advent-of-code-2020/day20/input.txt")
+	file, err := os.Open("/Users/jeff.martin@getweave.com/go/src/github.com/jmartin127/advent-of-code-2020/day20/input_final.txt")
 	if err != nil {
 		panic(err)
 	}
@@ -261,9 +261,9 @@ func main() {
 				}
 			}
 		}
-		fmt.Printf("ID: %d, %d\n", t1.id, numMatchesForTile)
+		//fmt.Printf("ID: %d, %d\n", t1.id, numMatchesForTile)
 		if numMatchesForTile == 2 {
-			fmt.Printf("Found corner! %d\n", t1.id)
+			//fmt.Printf("Found corner! %d\n", t1.id)
 			answer *= t1.id
 			corners = append(corners, t1)
 		} else if numMatchesForTile == 3 {
@@ -318,7 +318,10 @@ func main() {
 		remaining = addRowToPuzzle(p, i, remaining)
 	}
 	fmt.Println("FINAL PUZZLE")
-	p.print()
+	//p.print()
+
+	// cp := p.convertToCompletedPuzzle()
+	// cp.print()
 
 	// Remove the edges
 	fmt.Println("AFTER REMOVING EDGES")
@@ -328,16 +331,66 @@ func main() {
 	// Combine into the ultimate puzzle!
 	cp := p.convertToCompletedPuzzle()
 	cp.print()
-
 	fmt.Printf("Size of completed puzzle %d\n", len(cp.matrix))
 	// Look for sea monsters!
 	numSeaMonsters := cp.findSeaMonsters()
 	fmt.Printf("Num sea monsters %d\n", numSeaMonsters)
 
+	// Find overlapping sea monsters
+	seaMonsterIndexes := findSeaMonsterIndexes(cp.asString(), len(cp.matrix))
+	fmt.Printf("total num %d\n", len(seaMonsterIndexes))
+	fmt.Printf("locations: %+v\n", seaMonsterIndexes)
+	finalLine := cp.asString()
+	for index := range seaMonsterIndexes {
+		finalLine = addMonsterToOcean(finalLine, index, len(cp.matrix))
+	}
+
 	// Print the result!
-	sm := seaMonster{}
-	fmt.Printf("Total waves %d\n", cp.numTotalWaves())
-	fmt.Printf("Answer! %d\n", cp.numTotalWaves()-(numSeaMonsters*sm.numWavesInMonster()))
+	fmt.Printf("Answer! %d\n", countWaves(finalLine))
+}
+
+/*
+indexes:
+line 1: 18 (add index)
+line 2: 0,5,6,11,12,17,18,19 (add index + size)
+line 3: 1,4,7,10,13,16 (add index + size*2)
+*/
+func addMonsterToOcean(line string, index int, size int) string {
+	// line 1
+	indexesToUpdate := make(map[int]bool, 0)
+	indexesToUpdate[18+index] = true
+
+	// line 2
+	for _, v := range []int{0, 5, 6, 11, 12, 17, 18, 19} {
+		indexesToUpdate[v+index+size] = true
+	}
+
+	// line 3
+	for _, v := range []int{1, 4, 7, 10, 13, 16} {
+		indexesToUpdate[v+index+size+size] = true
+	}
+
+	newString := ""
+	for i, r := range []rune(line) {
+		update, _ := indexesToUpdate[i]
+		if update {
+			newString += "O"
+		} else {
+			newString += string(r)
+		}
+	}
+
+	return newString
+}
+
+func countWaves(line string) int {
+	var result int
+	for _, r := range []rune(line) {
+		if string(r) == "#" {
+			result++
+		}
+	}
+	return result
 }
 
 func (cp *completedPuzzle) numTotalWaves() int {
@@ -478,6 +531,40 @@ func convertRowToString(row []bool) string {
 	return result
 }
 
+func findSeaMonsterIndexes(line string, size int) map[int]bool {
+	sm := &seaMonster{}
+	extra := size - sm.width()
+	monsterLength := sm.width() + extra + sm.width() + extra + sm.width()
+
+	result := make(map[int]bool, 0)
+	for i := 0; i < len(line)-monsterLength; i++ {
+		if isSeaMonsterAtIndex(line, i, size) {
+			result[i] = true
+		}
+	}
+
+	return result
+}
+
+func isSeaMonsterAtIndex(line string, index int, size int) bool {
+	sm := &seaMonster{}
+	extra := size - sm.width()
+	extraStr := strconv.Itoa(extra)
+	r := regexp.MustCompile("([#\\.]{18}[#]{1}[#\\.]{1})[#.]{" + extraStr + "}([#]{1}[#\\.]{4}[#]{2}[#\\.]{4}[#]{2}[#\\.]{4}[#]{3})[#.]{" + extraStr + "}([#\\.]{1}[#]{1}[#\\.]{2}[#]{1}[#\\.]{2}[#]{1}[#\\.]{2}[#]{1}[#\\.]{2}[#]{1}[#\\.]{2}[#]{1}[#\\.]{3})")
+
+	monsterLength := sm.width() + extra + sm.width() + extra + sm.width()
+
+	match := r.FindStringIndex(line[index : index+monsterLength])
+	//fmt.Printf("checking line %d\n", len(line[index:index+monsterLength]))
+
+	if len(match) > 0 {
+		fmt.Printf("Found %+v\n", match)
+		fmt.Printf("Line %s\n", line[index:index+monsterLength])
+	}
+
+	return len(match) > 0
+}
+
 func numSeaMonstersInString(line string, size int) int {
 	// so ugly lol (each group of parens is a line for the sea monster)
 	// NOTE this assumes 4 extra, need to change it for actualy num of extra padding
@@ -486,7 +573,7 @@ func numSeaMonstersInString(line string, size int) int {
 	// 96-20 = 76
 	//r := regexp.MustCompile(`([#\.]{18}[#]{1}[#\.]{1})[#.]{76}([#]{1}[#\.]{4}[#]{2}[#\.]{4}[#]{2}[#\.]{4}[#]{3})[#.]{76}([#\.]{1}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{3})`)
 
-	// dynamic
+	// dynamic regex
 	sm := &seaMonster{}
 	extra := size - sm.width()
 	extraStr := strconv.Itoa(extra)
