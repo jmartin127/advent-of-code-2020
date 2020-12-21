@@ -65,6 +65,14 @@ func newComletedPuzzle() *completedPuzzle {
 	}
 }
 
+func newTile(id int) *tile {
+	image := make([]*row, 0)
+	return &tile{
+		id:    id,
+		image: image,
+	}
+}
+
 func (cp *completedPuzzle) print() {
 	for _, r := range cp.matrix {
 		for _, v := range r {
@@ -75,6 +83,48 @@ func (cp *completedPuzzle) print() {
 			}
 		}
 		fmt.Println()
+	}
+}
+
+func (cp *completedPuzzle) rotateLeft90Degrees() {
+	N := len(cp.matrix)
+
+	// Consider all squares one by one
+	for x := 0; x < N/2; x++ {
+		// Consider elements in group
+		// of 4 in current square
+		for y := x; y < N-x-1; y++ {
+			// Store current cell in
+			// temp variable
+			temp := cp.matrix[x][y]
+
+			// Move values from right to top
+			cp.matrix[x][y] = cp.matrix[y][N-1-x]
+
+			// Move values from bottom to right
+			cp.matrix[y][N-1-x] = cp.matrix[N-1-x][N-1-y]
+
+			// Move values from left to bottom
+			cp.matrix[N-1-x][N-1-y] = cp.matrix[N-1-y][x]
+
+			// Assign temp to left
+			cp.matrix[N-1-y][x] = temp
+		}
+	}
+}
+
+func (cp *completedPuzzle) asString() string {
+	str := ""
+	for _, r := range cp.matrix {
+		str += convertRowToString(r)
+	}
+	return str
+}
+
+func (cp *completedPuzzle) flip() {
+	for rowIndex, r := range cp.matrix {
+		newRow := reverseBools(r)
+		cp.matrix[rowIndex] = newRow
 	}
 }
 
@@ -120,14 +170,6 @@ func (p *puzzle) convertToCompletedPuzzle() *completedPuzzle {
 	return result
 }
 
-func newTile(id int) *tile {
-	image := make([]*row, 0)
-	return &tile{
-		id:    id,
-		image: image,
-	}
-}
-
 func (t *tile) copy() *tile {
 	newImage := make([]*row, 0)
 	for _, r := range t.image {
@@ -137,6 +179,12 @@ func (t *tile) copy() *tile {
 	return &tile{
 		id:    t.id,
 		image: newImage,
+	}
+}
+
+func reverseRows(t *tile) {
+	for i, j := 0, len(t.image)-1; i < j; i, j = i+1, j-1 {
+		t.image[i], t.image[j] = t.image[j], t.image[i]
 	}
 }
 
@@ -261,9 +309,7 @@ func main() {
 				}
 			}
 		}
-		//fmt.Printf("ID: %d, %d\n", t1.id, numMatchesForTile)
 		if numMatchesForTile == 2 {
-			//fmt.Printf("Found corner! %d\n", t1.id)
 			answer *= t1.id
 			corners = append(corners, t1)
 		} else if numMatchesForTile == 3 {
@@ -271,7 +317,7 @@ func main() {
 		} else if numMatchesForTile == 4 {
 			middle = append(middle, t1)
 		} else {
-			fmt.Printf("TILE IS ODD %d, %d", t1.id, numMatchesForTile)
+			fmt.Printf("This shouldn't happen %d, %d", t1.id, numMatchesForTile)
 		}
 	}
 
@@ -283,6 +329,7 @@ func main() {
 
 	// Grab a corner and start building!
 	// Need to orient the corner so that a matching edge is to the right and left
+	// NOTE: most of these rotations shouldn't be needed if orientStartingPiece works properly
 	firstCorner := corners[0]
 	fmt.Printf("Starting piece %d\n", firstCorner.id)
 	firstCorner = orientStartingPiece(firstCorner, edges)
@@ -317,29 +364,23 @@ func main() {
 	for i := 1; i < size; i++ {
 		remaining = addRowToPuzzle(p, i, remaining)
 	}
-	fmt.Println("FINAL PUZZLE")
-	//p.print()
-
-	// cp := p.convertToCompletedPuzzle()
-	// cp.print()
+	p.print()
 
 	// Remove the edges
-	fmt.Println("AFTER REMOVING EDGES")
 	p.removeTileEdges()
 	p.print()
 
 	// Combine into the ultimate puzzle!
 	cp := p.convertToCompletedPuzzle()
 	cp.print()
-	fmt.Printf("Size of completed puzzle %d\n", len(cp.matrix))
+
 	// Look for sea monsters!
 	numSeaMonsters := cp.findSeaMonsters()
-	fmt.Printf("Num sea monsters %d\n", numSeaMonsters)
+	fmt.Printf("Num non-overlapping sea monsters %d\n", numSeaMonsters)
 
 	// Find overlapping sea monsters
 	seaMonsterIndexes := findSeaMonsterIndexes(cp.asString(), len(cp.matrix))
-	fmt.Printf("total num %d\n", len(seaMonsterIndexes))
-	fmt.Printf("locations: %+v\n", seaMonsterIndexes)
+	fmt.Printf("num overlapping sea monsters %d\n", len(seaMonsterIndexes))
 	finalLine := cp.asString()
 	for index := range seaMonsterIndexes {
 		finalLine = addMonsterToOcean(finalLine, index, len(cp.matrix))
@@ -347,188 +388,6 @@ func main() {
 
 	// Print the result!
 	fmt.Printf("Answer! %d\n", countWaves(finalLine))
-}
-
-/*
-indexes:
-line 1: 18 (add index)
-line 2: 0,5,6,11,12,17,18,19 (add index + size)
-line 3: 1,4,7,10,13,16 (add index + size*2)
-*/
-func addMonsterToOcean(line string, index int, size int) string {
-	// line 1
-	indexesToUpdate := make(map[int]bool, 0)
-	indexesToUpdate[18+index] = true
-
-	// line 2
-	for _, v := range []int{0, 5, 6, 11, 12, 17, 18, 19} {
-		indexesToUpdate[v+index+size] = true
-	}
-
-	// line 3
-	for _, v := range []int{1, 4, 7, 10, 13, 16} {
-		indexesToUpdate[v+index+size+size] = true
-	}
-
-	newString := ""
-	for i, r := range []rune(line) {
-		update, _ := indexesToUpdate[i]
-		if update {
-			newString += "O"
-		} else {
-			newString += string(r)
-		}
-	}
-
-	return newString
-}
-
-func countWaves(line string) int {
-	var result int
-	for _, r := range []rune(line) {
-		if string(r) == "#" {
-			result++
-		}
-	}
-	return result
-}
-
-func (cp *completedPuzzle) numTotalWaves() int {
-	var result int
-	for _, r := range cp.matrix {
-		for _, v := range r {
-			if v {
-				result++
-			}
-		}
-	}
-
-	return result
-}
-
-func (cp *completedPuzzle) findSeaMonsters() int {
-	size := len(cp.matrix)
-	numMonsters := numSeaMonstersInString(cp.asString(), size)
-	if numMonsters > 0 {
-		return numMonsters
-	}
-
-	cp.rotateLeft90Degrees()
-	numMonsters = numSeaMonstersInString(cp.asString(), size)
-	if numMonsters > 0 {
-		return numMonsters
-	}
-
-	cp.rotateLeft90Degrees()
-	numMonsters = numSeaMonstersInString(cp.asString(), size)
-	if numMonsters > 0 {
-		return numMonsters
-	}
-
-	cp.rotateLeft90Degrees()
-	numMonsters = numSeaMonstersInString(cp.asString(), size)
-	if numMonsters > 0 {
-		return numMonsters
-	}
-
-	// flip it
-	cp.flip()
-	numMonsters = numSeaMonstersInString(cp.asString(), size)
-	if numMonsters > 0 {
-		return numMonsters
-	}
-
-	cp.rotateLeft90Degrees()
-	numMonsters = numSeaMonstersInString(cp.asString(), size)
-	if numMonsters > 0 {
-		return numMonsters
-	}
-
-	cp.rotateLeft90Degrees()
-	numMonsters = numSeaMonstersInString(cp.asString(), size)
-	if numMonsters > 0 {
-		return numMonsters
-	}
-
-	cp.rotateLeft90Degrees()
-	numMonsters = numSeaMonstersInString(cp.asString(), size)
-	if numMonsters > 0 {
-		return numMonsters
-	}
-
-	return numMonsters
-}
-
-func (cp *completedPuzzle) flip() {
-	for rowIndex, r := range cp.matrix {
-		newRow := reverseBools(r)
-		cp.matrix[rowIndex] = newRow
-	}
-}
-
-func flipTileHorizontal(o *tile) *tile {
-	//fmt.Printf("\nFLIP!!!\n")
-	//o.print()
-	t := o.copy()
-
-	result := newTile(t.id)
-	for _, r := range t.image {
-		newRow := reverseBools(r.vals)
-		result.image = append(result.image, &row{
-			vals: newRow,
-		})
-	}
-
-	//fmt.Printf("\nAFTER FLIP!!!\n")
-	//result.print()
-	return result
-}
-
-func (cp *completedPuzzle) rotateLeft90Degrees() {
-	N := len(cp.matrix)
-
-	// Consider all squares one by one
-	for x := 0; x < N/2; x++ {
-		// Consider elements in group
-		// of 4 in current square
-		for y := x; y < N-x-1; y++ {
-			// Store current cell in
-			// temp variable
-			temp := cp.matrix[x][y]
-
-			// Move values from right to top
-			cp.matrix[x][y] = cp.matrix[y][N-1-x]
-
-			// Move values from bottom to right
-			cp.matrix[y][N-1-x] = cp.matrix[N-1-x][N-1-y]
-
-			// Move values from left to bottom
-			cp.matrix[N-1-x][N-1-y] = cp.matrix[N-1-y][x]
-
-			// Assign temp to left
-			cp.matrix[N-1-y][x] = temp
-		}
-	}
-}
-
-func (cp *completedPuzzle) asString() string {
-	str := ""
-	for _, r := range cp.matrix {
-		str += convertRowToString(r)
-	}
-	return str
-}
-
-func convertRowToString(row []bool) string {
-	result := ""
-	for _, v := range row {
-		if v {
-			result += "#"
-		} else {
-			result += "."
-		}
-	}
-	return result
 }
 
 func findSeaMonsterIndexes(line string, size int) map[int]bool {
@@ -552,43 +411,82 @@ func isSeaMonsterAtIndex(line string, index int, size int) bool {
 	extraStr := strconv.Itoa(extra)
 	r := regexp.MustCompile("([#\\.]{18}[#]{1}[#\\.]{1})[#.]{" + extraStr + "}([#]{1}[#\\.]{4}[#]{2}[#\\.]{4}[#]{2}[#\\.]{4}[#]{3})[#.]{" + extraStr + "}([#\\.]{1}[#]{1}[#\\.]{2}[#]{1}[#\\.]{2}[#]{1}[#\\.]{2}[#]{1}[#\\.]{2}[#]{1}[#\\.]{2}[#]{1}[#\\.]{3})")
 
-	monsterLength := sm.width() + extra + sm.width() + extra + sm.width()
-
-	match := r.FindStringIndex(line[index : index+monsterLength])
-	//fmt.Printf("checking line %d\n", len(line[index:index+monsterLength]))
-
-	if len(match) > 0 {
-		fmt.Printf("Found %+v\n", match)
-		fmt.Printf("Line %s\n", line[index:index+monsterLength])
-	}
+	fullMonsterLength := sm.width() + extra + sm.width() + extra + sm.width()
+	match := r.FindStringIndex(line[index : index+fullMonsterLength])
 
 	return len(match) > 0
 }
 
-func numSeaMonstersInString(line string, size int) int {
-	// so ugly lol (each group of parens is a line for the sea monster)
-	// NOTE this assumes 4 extra, need to change it for actualy num of extra padding
-	//r := regexp.MustCompile(`([#\.]{18}[#]{1}[#\.]{1})[#.]{4}([#]{1}[#\.]{4}[#]{2}[#\.]{4}[#]{2}[#\.]{4}[#]{3})[#.]{4}([#\.]{1}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{3})`)
+/*
+indexes:
+line 1: 18 (add index)
+line 2: 0,5,6,11,12,17,18,19 (add index + size)
+line 3: 1,4,7,10,13,16 (add index + size*2)
+*/
+func addMonsterToOcean(line string, index int, size int) string {
+	// line 1
+	indexesToUpdate := make(map[int]bool, 0)
+	indexesToUpdate[18+index] = true
 
-	// 96-20 = 76
-	//r := regexp.MustCompile(`([#\.]{18}[#]{1}[#\.]{1})[#.]{76}([#]{1}[#\.]{4}[#]{2}[#\.]{4}[#]{2}[#\.]{4}[#]{3})[#.]{76}([#\.]{1}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{3})`)
-
-	// dynamic regex
-	sm := &seaMonster{}
-	extra := size - sm.width()
-	extraStr := strconv.Itoa(extra)
-	r := regexp.MustCompile("([#\\.]{18}[#]{1}[#\\.]{1})[#.]{" + extraStr + "}([#]{1}[#\\.]{4}[#]{2}[#\\.]{4}[#]{2}[#\\.]{4}[#]{3})[#.]{" + extraStr + "}([#\\.]{1}[#]{1}[#\\.]{2}[#]{1}[#\\.]{2}[#]{1}[#\\.]{2}[#]{1}[#\\.]{2}[#]{1}[#\\.]{2}[#]{1}[#\\.]{3})")
-
-	matches := r.FindAllStringIndex(line, -1)
-
-	// check if the match crosses the edge, since we can't have wrapping sea monsters
-	for _, a := range matches {
-		firstPos := a[0] % size
-		secondPos := firstPos + sm.width()
-		fmt.Printf("%d, %d\n", firstPos, secondPos)
+	// line 2
+	for _, v := range []int{0, 5, 6, 11, 12, 17, 18, 19} {
+		indexesToUpdate[v+index+size] = true
 	}
 
-	return len(matches)
+	// line 3
+	for _, v := range []int{1, 4, 7, 10, 13, 16} {
+		indexesToUpdate[v+index+size+size] = true
+	}
+
+	// convert to monsters
+	newString := ""
+	for i, r := range []rune(line) {
+		update, _ := indexesToUpdate[i]
+		if update {
+			newString += "O"
+		} else {
+			newString += string(r)
+		}
+	}
+
+	return newString
+}
+
+// Count the number of waves left after monsters have been added
+func countWaves(line string) int {
+	var result int
+	for _, r := range []rune(line) {
+		if string(r) == "#" {
+			result++
+		}
+	}
+	return result
+}
+
+func flipTileHorizontal(o *tile) *tile {
+	t := o.copy()
+
+	result := newTile(t.id)
+	for _, r := range t.image {
+		newRow := reverseBools(r.vals)
+		result.image = append(result.image, &row{
+			vals: newRow,
+		})
+	}
+
+	return result
+}
+
+func convertRowToString(row []bool) string {
+	result := ""
+	for _, v := range row {
+		if v {
+			result += "#"
+		} else {
+			result += "."
+		}
+	}
+	return result
 }
 
 func orientStartingPiece(t *tile, edges []*tile) *tile {
@@ -742,7 +640,6 @@ func numSharedEdges(t1 *tile, t2 *tile) (int, *tile, int) {
 // 3 == bottom edge of 1
 // 4 == top edge of 1
 func compareTiles(t1 *tile, t2 *tile) (int, int) {
-	//var numMatching int
 	if compare1(t1, t2) {
 		return 1, 1
 	}
@@ -755,11 +652,6 @@ func compareTiles(t1 *tile, t2 *tile) (int, int) {
 	if compare4(t1, t2) {
 		return 1, 4
 	}
-
-	// // Should only ever be at most 1
-	// if numMatching > 1 {
-	// 	os.Exit(1)
-	// }
 
 	return 0, 0
 }
@@ -855,12 +747,6 @@ func rotateTile90DegressLeft(o *tile) *tile {
 	return t
 }
 
-func reverseRows(t *tile) {
-	for i, j := 0, len(t.image)-1; i < j; i, j = i+1, j-1 {
-		t.image[i], t.image[j] = t.image[j], t.image[i]
-	}
-}
-
 func reverseBools(input []bool) []bool {
 	for i, j := 0, len(input)-1; i < j; i, j = i+1, j-1 {
 		input[i], input[j] = input[j], input[i]
@@ -893,4 +779,87 @@ func parseRow(line string) *row {
 	return &row{
 		vals: vals,
 	}
+}
+
+// ****************************************************************************
+// NOTE: This below this was my first attempt and ONLY finds non-overlapping sea monsters
+// ****************************************************************************
+
+func (cp *completedPuzzle) findSeaMonsters() int {
+	size := len(cp.matrix)
+	numMonsters := numSeaMonstersInString(cp.asString(), size)
+	if numMonsters > 0 {
+		return numMonsters
+	}
+
+	cp.rotateLeft90Degrees()
+	numMonsters = numSeaMonstersInString(cp.asString(), size)
+	if numMonsters > 0 {
+		return numMonsters
+	}
+
+	cp.rotateLeft90Degrees()
+	numMonsters = numSeaMonstersInString(cp.asString(), size)
+	if numMonsters > 0 {
+		return numMonsters
+	}
+
+	cp.rotateLeft90Degrees()
+	numMonsters = numSeaMonstersInString(cp.asString(), size)
+	if numMonsters > 0 {
+		return numMonsters
+	}
+
+	// flip it
+	cp.flip()
+	numMonsters = numSeaMonstersInString(cp.asString(), size)
+	if numMonsters > 0 {
+		return numMonsters
+	}
+
+	cp.rotateLeft90Degrees()
+	numMonsters = numSeaMonstersInString(cp.asString(), size)
+	if numMonsters > 0 {
+		return numMonsters
+	}
+
+	cp.rotateLeft90Degrees()
+	numMonsters = numSeaMonstersInString(cp.asString(), size)
+	if numMonsters > 0 {
+		return numMonsters
+	}
+
+	cp.rotateLeft90Degrees()
+	numMonsters = numSeaMonstersInString(cp.asString(), size)
+	if numMonsters > 0 {
+		return numMonsters
+	}
+
+	return numMonsters
+}
+
+func numSeaMonstersInString(line string, size int) int {
+	// so ugly lol (each group of parens is a line for the sea monster)
+	// NOTE this assumes 4 extra, need to change it for actualy num of extra padding
+	//r := regexp.MustCompile(`([#\.]{18}[#]{1}[#\.]{1})[#.]{4}([#]{1}[#\.]{4}[#]{2}[#\.]{4}[#]{2}[#\.]{4}[#]{3})[#.]{4}([#\.]{1}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{3})`)
+
+	// 96-20 = 76
+	//r := regexp.MustCompile(`([#\.]{18}[#]{1}[#\.]{1})[#.]{76}([#]{1}[#\.]{4}[#]{2}[#\.]{4}[#]{2}[#\.]{4}[#]{3})[#.]{76}([#\.]{1}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{2}[#]{1}[#\.]{3})`)
+
+	// dynamic regex
+	sm := &seaMonster{}
+	extra := size - sm.width()
+	extraStr := strconv.Itoa(extra)
+	r := regexp.MustCompile("([#\\.]{18}[#]{1}[#\\.]{1})[#.]{" + extraStr + "}([#]{1}[#\\.]{4}[#]{2}[#\\.]{4}[#]{2}[#\\.]{4}[#]{3})[#.]{" + extraStr + "}([#\\.]{1}[#]{1}[#\\.]{2}[#]{1}[#\\.]{2}[#]{1}[#\\.]{2}[#]{1}[#\\.]{2}[#]{1}[#\\.]{2}[#]{1}[#\\.]{3})")
+
+	matches := r.FindAllStringIndex(line, -1)
+
+	// check if the match crosses the edge, since we can't have wrapping sea monsters
+	for _, a := range matches {
+		firstPos := a[0] % size
+		secondPos := firstPos + sm.width()
+		fmt.Printf("%d, %d\n", firstPos, secondPos)
+	}
+
+	return len(matches)
 }
