@@ -62,15 +62,16 @@ func play(p1Deck, p2Deck []int, gameCounter int) ([]int, []int) {
 	}
 
 	fmt.Printf("=== Game %d ===\n", gameCounter)
+	pastStates := make(map[string]bool, 0)
 
 	var roundCounter int
 	for true {
 		roundCounter++
-		fmt.Printf("\n-- Round %d (Game %d) --\n", roundCounter, gameCounter)
-		fmt.Printf("Player 1's deck: %+v\n", p1Deck)
-		fmt.Printf("Player 2's deck: %+v\n", p2Deck)
+		// fmt.Printf("\n-- Round %d (Game %d) --\n", roundCounter, gameCounter)
+		// fmt.Printf("Player 1's deck: %+v\n", p1Deck)
+		// fmt.Printf("Player 2's deck: %+v\n", p2Deck)
 
-		p1Deck, p2Deck = playRound(p1Deck, p2Deck, gameCounter, roundCounter)
+		p1Deck, p2Deck, pastStates = playRound(p1Deck, p2Deck, gameCounter, roundCounter, pastStates)
 		if len(p1Deck) == 0 || len(p2Deck) == 0 {
 			return p1Deck, p2Deck
 		}
@@ -79,14 +80,37 @@ func play(p1Deck, p2Deck []int, gameCounter int) ([]int, []int) {
 	return nil, nil
 }
 
-func playRound(p1Deck, p2Deck []int, gameCounter int, roundCounter int) ([]int, []int) {
-	// TODO add check for same cards
+func convertDecksToGameState(p1Deck, p2Deck []int) string {
+	p1 := strings.Join(convertToStringArray(p1Deck), ",")
+	p2 := strings.Join(convertToStringArray(p2Deck), ",")
+	state := fmt.Sprintf("%s:%s", p1, p2)
+	return state
+}
+
+func convertToStringArray(input []int) []string {
+	result := make([]string, 0)
+	for _, v := range input {
+		result = append(result, strconv.Itoa(v))
+	}
+	return result
+}
+
+func playRound(p1Deck, p2Deck []int, gameCounter int, roundCounter int, pastStates map[string]bool) ([]int, []int, map[string]bool) {
+	// check for same cards
+	newState := convertDecksToGameState(p1Deck, p2Deck)
+	if _, ok := pastStates[newState]; ok {
+		fmt.Printf("Found past state for round %d of game %d state %s!\n", gameCounter, roundCounter, newState)
+		return p1Deck, []int{}, pastStates
+	}
+
+	pastStates[newState] = true
+	// fmt.Printf("num past %d\n", len(pastStates))
 
 	// get the top card from each deck
 	card1, p1Deck := removeFirstElement(p1Deck)
 	card2, p2Deck := removeFirstElement(p2Deck)
-	fmt.Printf("Player 1 plays: %d\n", card1)
-	fmt.Printf("Player 2 plays: %d\n", card2)
+	// fmt.Printf("Player 1 plays: %d\n", card1)
+	// fmt.Printf("Player 2 plays: %d\n", card2)
 
 	// If both players have at least as many cards remaining in their deck as the value of the card they just drew, the winner of the round is determined by playing a new game of Recursive Combat (see below).
 	p1Remaining := len(p1Deck)
@@ -107,15 +131,15 @@ func playRound(p1Deck, p2Deck []int, gameCounter int, roundCounter int) ([]int, 
 	}
 
 	if roundWinnerIsPlayer1 {
-		fmt.Printf("Player 1 wins round %d of game %d!\n", gameCounter, roundCounter)
+		// fmt.Printf("Player 1 wins round %d of game %d!\n", gameCounter, roundCounter)
 		p1Deck = append(p1Deck, card1)
 		p1Deck = append(p1Deck, card2)
 	} else {
-		fmt.Printf("Player 2 wins round %d of game %d!\n", gameCounter, roundCounter)
+		// fmt.Printf("Player 2 wins round %d of game %d!\n", gameCounter, roundCounter)
 		p2Deck = append(p2Deck, card2)
 		p2Deck = append(p2Deck, card1)
 	}
-	return p1Deck, p2Deck
+	return p1Deck, p2Deck, pastStates
 }
 
 func copyNextNCards(deck []int, n int) []int {
