@@ -106,14 +106,11 @@ func insertCups(cupsRemoved []*node, destCup *node) {
 }
 
 func insertAfterNode(afterNode *node, n *node) {
-	//fmt.Printf("ADDING: Setting value %d to index %d\n", value, addingIndex)
 	nextNodeTmp := afterNode.next
 	afterNode.next = n
 	n.prev = afterNode
 	n.next = nextNodeTmp
 	nextNodeTmp.prev = n
-	//fmt.Printf("Seeting previous for node %+v to %+v\n", n, afterNode)
-	//fmt.Printf("Input afterward %+v\n", input)
 }
 
 /*
@@ -129,9 +126,6 @@ func determineDestination(currentCup *node, cupsRemoved []*node) *node {
 
 	// find the destination
 	for i := desired; i > 0; i-- {
-		//fmt.Printf("Looking for a cup with label %d\n", i)
-		//fmt.Printf("cups %+v\n", cups)
-		//fmt.Printf("indexByLabel %+v\n", indexByLabel)
 
 		// skip the cups removed
 		var wasRemoved bool
@@ -147,16 +141,12 @@ func determineDestination(currentCup *node, cupsRemoved []*node) *node {
 		}
 
 		if n, ok := nodeByLabel[i]; ok {
-			//fmt.Printf("First return value %+v\n", n)
 			return n
 		}
 	}
 
 	// didn't find, return max
 	for i := absoluteMax; i > 0; i-- {
-		//fmt.Printf("checking max %d\n", i)
-		//fmt.Printf("cups removed\n")
-		//printList(cupsRemoved)
 		var wasRemoved bool
 		for _, cr := range cupsRemoved {
 			if cr.label == i {
@@ -168,35 +158,21 @@ func determineDestination(currentCup *node, cupsRemoved []*node) *node {
 			continue
 		}
 
-		//fmt.Printf("Checking map for label %d\n", i)
 		if n, ok := nodeByLabel[i]; ok {
-			//fmt.Printf("Second return max %+v\n", n)
 			return n
 		}
 	}
 
-	//fmt.Println("Uh oh... returning nil")
 	return nil
 }
 
-func printList(cups []*node) {
-	for _, c := range cups {
-		fmt.Printf("cup %+v\n", c)
-	}
-}
-
 func pickUpCups(startNode *node, numToPickUp int) []*node {
-	//fmt.Printf("Removing starting with node %+v\n", startNode)
-	//fmt.Printf("Previous %+v\n", startNode.prev)
-
 	tmp := startNode.prev
-	//fmt.Printf("Setting the next of %+v to %+v\n", startNode.prev, startNode.next.next.next)
 	startNode.prev.next = startNode.next.next.next
 	startNode.next.next.next.prev = tmp
 
 	cupsRemoved := make([]*node, 0)
 	for n := startNode; len(cupsRemoved) < numToPickUp; n = n.next {
-		//fmt.Printf("adding removed cup %+v\n", n)
 		cupsRemoved = append(cupsRemoved, n)
 	}
 
@@ -204,14 +180,11 @@ func pickUpCups(startNode *node, numToPickUp int) []*node {
 		nullOutNode(cr)
 	}
 
-	//fmt.Printf("Input afterward %+v\n", input)
-
 	return cupsRemoved
 }
 
 func nullOutNode(n *node) *node {
 	n.prev = nil
 	n.next = nil
-
 	return n
 }
