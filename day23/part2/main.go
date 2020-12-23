@@ -2,16 +2,45 @@ package main
 
 import (
 	"fmt"
-	"sort"
 )
 
-var indexByLabel map[int]int
+type node struct {
+	prev  *node
+	next  *node
+	label int
+}
+
+func newNode(label int, prevNode *node) *node {
+	return &node{
+		label: label,
+		prev:  prevNode,
+	}
+}
+
+var nodeByLabel map[int]*node
+
+var absoluteMax int
 
 func main() {
 	input := []int{3, 8, 9, 1, 2, 5, 4, 6, 7}
 	//input := []int{1, 2, 3, 4, 8, 7, 5, 9, 6}
 
+	// initialize
+	prevNode := newNode(input[0], nil)
+	startNode := prevNode
+	for i := 1; i < len(input); i++ {
+		l := input[i]
+		n := newNode(l, prevNode)
+		prevNode.next = n
+		prevNode = n
+
+		if l > absoluteMax {
+			absoluteMax = l
+		}
+	}
+
 	// add 10 million values?
+	// TODO set aboslute max
 	// for i := 10; i <= 10000000; i++ {
 	// 	input = append(input, i)
 	// }
@@ -19,82 +48,88 @@ func main() {
 
 	// load them into a map
 	fmt.Println("loading map")
-	indexByLabel = make(map[int]int, 0)
-	for i, v := range input {
-		indexByLabel[v] = i
+	nodeByLabel = make(map[int]*node, 0)
+	currentNode := startNode
+	for currentNode.next != nil {
+		fmt.Printf("Adding to map %d\n", currentNode.label)
+		nodeByLabel[currentNode.label] = currentNode
+		currentNode = currentNode.next
 	}
+	nodeByLabel[currentNode.label] = currentNode
 	fmt.Println("Done creating map")
 
-	var currentIndex int
+	// connect last with first
+	startNode.prev = prevNode
+	prevNode.next = startNode
+	fmt.Printf("Start node %+v\n", startNode)
+	fmt.Printf("Last node %+v\n", prevNode)
+
+	currentCup := startNode
 	for i := 0; i < 100; i++ {
 		fmt.Printf("\n-- move %d\n", i+1)
-		//fmt.Printf("-- cups %+v\n", input)
-		input, currentIndex = executeMove(input, currentIndex)
+		fmt.Printf("-- cups ")
+		printCups(currentCup)
+		fmt.Println()
+		currentCup = executeMove(currentCup)
 	}
 
 	fmt.Println("\n-- final --")
-	fmt.Printf("cups: %+v\n", input)
-	fmt.Printf("Current cup %d\n", input[currentIndex])
+	fmt.Printf("cups: \n")
+	printCups(currentCup)
+	fmt.Println()
+	fmt.Printf("Current cup %d\n", currentCup.label)
 }
 
-func executeMove(input []int, currentCupIndex int) ([]int, int) {
-	//fmt.Printf("Current cup %d\n", input[currentCupIndex])
-	currentCupLabel := input[currentCupIndex]
-	cupsRemoved, newInput := pickUpCups(input, currentCupIndex+1, 3)
-	//fmt.Printf("pick up: %+v\n", cupsRemoved)
+func printCups(n *node) {
+	startLabel := n.label
+	current := n
+	for true {
+		fmt.Printf("%d ", current.label)
+		current = current.next
+		if current.label == startLabel {
+			break
+		}
+	}
+}
 
-	destIndex := determineDestination(currentCupLabel, newInput)
-	//fmt.Printf("destination: %d\n", newInput[destIndex])
+func executeMove(currentCup *node) *node {
+	fmt.Printf("Current cup %d\n", currentCup.label)
 
-	result := insertCups(newInput, cupsRemoved, destIndex)
+	//fmt.Println("called pickup")
+	cupsRemoved := pickUpCups(currentCup.next, 3)
+	//: %+v\n", cupsRemoved)
+
+	//fmt.Println("called determine")
+	destCup := determineDestination(currentCup, cupsRemoved)
+	fmt.Printf("destination: %d\n", destCup.label)
+
+	//fmt.Println("called insert")
+	insertCups(cupsRemoved, destCup)
 
 	// determine a new currentIndex
 	// if the insert happened before the currentIndex, need to add 3
-	var numToAdd int
-	if destIndex < currentCupIndex {
-		numToAdd = 3
-	}
-	newCurrentIndex := currentCupIndex + 1 + numToAdd
-	if newCurrentIndex >= len(result) {
-		newCurrentIndex = 0
-	}
+	newCurrentNode := currentCup.next
+	fmt.Printf("New current node %+v\n", newCurrentNode)
 
-	return result, newCurrentIndex
+	return newCurrentNode
 }
 
 /*
 The crab places the cups it just picked up so that they are immediately clockwise of the destination cup. They keep the same order as when they were picked up.
 */
-func insertCups(input []int, cupsRemoved []int, destIndex int) []int {
-	insertLocation := destIndex + 1
-
-	result := insertAtIndex(input, insertLocation, cupsRemoved[0])
-	result = insertAtIndex(result, insertLocation+1, cupsRemoved[1])
-	result = insertAtIndex(result, insertLocation+2, cupsRemoved[2])
-
-	return result
+func insertCups(cupsRemoved []*node, destCup *node) {
+	insertAfterNode(destCup, cupsRemoved[0])
+	insertAfterNode(cupsRemoved[0], cupsRemoved[1])
+	insertAfterNode(cupsRemoved[1], cupsRemoved[2])
 }
 
-func insertAtIndex(input []int, addingIndex int, value int) []int {
-
-	// update the indexes of the map as needed
-	for label, index := range indexByLabel {
-		if index >= addingIndex {
-			//fmt.Printf("ADDING: Setting %d to %d\n", label, index+1)
-			indexByLabel[label] = index + 1
-		}
-	}
-
-	indexByLabel[value] = addingIndex
+func insertAfterNode(afterNode *node, n *node) {
 	//fmt.Printf("ADDING: Setting value %d to index %d\n", value, addingIndex)
-
-	input = append(input, 0)
-	copy(input[addingIndex+1:], input[addingIndex:])
-	input[addingIndex] = value
-
+	nextNodeTmp := afterNode.next
+	afterNode.next = n
+	n.prev = afterNode
+	n.next = nextNodeTmp
 	//fmt.Printf("Input afterward %+v\n", input)
-
-	return input
 }
 
 /*
@@ -105,69 +140,88 @@ lowest value on any cup's label, it wraps around to the highest value on any cup
 
 Returns the destination index
 */
-func determineDestination(currentCupLabel int, cups []int) int {
-	desired := currentCupLabel - 1
+func determineDestination(currentCup *node, cupsRemoved []*node) *node {
+	desired := currentCup.label - 1
 
 	// find the destination
 	for i := desired; i > 0; i-- {
 		//fmt.Printf("Looking for a cup with label %d\n", i)
 		//fmt.Printf("cups %+v\n", cups)
 		//fmt.Printf("indexByLabel %+v\n", indexByLabel)
-		if v, ok := indexByLabel[i]; ok {
-			//fmt.Printf("First return index %d, value %d\n", v, cups[v])
-			return v
+
+		// skip the cups removed
+		var wasRemoved bool
+		for _, cr := range cupsRemoved {
+			// cr %d\n", cr.label)
+			if cr.label == i {
+				wasRemoved = true
+				break
+			}
+		}
+		if wasRemoved {
+			continue
+		}
+
+		if n, ok := nodeByLabel[i]; ok {
+			fmt.Printf("First return value %+v\n", n)
+			return n
 		}
 	}
 
 	// didn't find, return max
-	max := -1
-	maxIndex := -1
-	for i, c := range cups {
-		if c > max {
-			max = c
-			maxIndex = i
-		}
-	}
-
-	//fmt.Printf("Second return max %d\n", max)
-	return maxIndex
-}
-
-func pickUpCups(input []int, startIndex int, numToPickUp int) ([]int, []int) {
-	cups := make([]int, 0)
-	indexesRemoved := make([]int, 0)
-	for i := startIndex; len(cups) < numToPickUp; i++ {
-		if i >= len(input) {
-			i = len(input) % i
-		}
-		val := input[i]
-		cups = append(cups, val)
-		indexesRemoved = append(indexesRemoved, i)
-
-		// remove from the label map
-		delete(indexByLabel, input[i])
-	}
-
-	// remove them from the input slice
-	sort.Ints(indexesRemoved)
-	for i := len(indexesRemoved) - 1; i >= 0; i-- {
-		removingIndex := indexesRemoved[i]
-		input = remove(input, removingIndex)
-
-		// update the indexes of the map as needed
-		for label, index := range indexByLabel {
-			if index > removingIndex {
-				//fmt.Printf("Setting %d to %d\n", label, index-1)
-				indexByLabel[label] = index - 1
+	for i := absoluteMax; i > 0; i-- {
+		fmt.Printf("checking max %d\n", i)
+		fmt.Printf("cups removed\n")
+		printList(cupsRemoved)
+		var wasRemoved bool
+		for _, cr := range cupsRemoved {
+			if cr.label == i {
+				wasRemoved = true
+				break
 			}
 		}
+		if wasRemoved {
+			continue
+		}
+
+		fmt.Printf("Checking map for label %d\n", i)
+		if n, ok := nodeByLabel[i]; ok {
+			fmt.Printf("Second return max %+v\n", n)
+			return n
+		}
+	}
+
+	fmt.Println("Uh oh... returning nil")
+	return nil
+}
+
+func printList(cups []*node) {
+	for _, c := range cups {
+		fmt.Printf("cup %+v\n", c)
+	}
+}
+
+func pickUpCups(startNode *node, numToPickUp int) []*node {
+	cupsRemoved := make([]*node, 0)
+	for n := startNode; len(cupsRemoved) < numToPickUp; n = n.next {
+		// node %+v\n", n)
+		cupsRemoved = append(cupsRemoved, n)
+	}
+
+	for _, cr := range cupsRemoved {
+		remove(cr)
 	}
 
 	//fmt.Printf("Input afterward %+v\n", input)
 
-	return cups, input
+	return cupsRemoved
 }
 
-func remove(slice []int, s int) []int {
-	return append(slice[:s], slice[s+1:]...)
+func remove(n *node) *node {
+	n.prev.next = n.next // set the next of the previous to the next
+	n.next.prev = n.prev // set thep previous of the next to the previous
+	n.prev = nil
+	n.next = nil
+
+	return n
 }
