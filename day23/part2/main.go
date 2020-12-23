@@ -118,7 +118,6 @@ func determineDestination(currentCup *node, cupsRemoved []*node) *node {
 
 	// find the destination
 	for i := desired; i > 0; i-- {
-
 		// skip the cups removed
 		var wasRemoved bool
 		for _, cr := range cupsRemoved {
