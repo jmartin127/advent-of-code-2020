@@ -5,20 +5,30 @@ import (
 	"sort"
 )
 
+var indexByLabel map[int]int
+
 func main() {
 	input := []int{3, 8, 9, 1, 2, 5, 4, 6, 7}
 	//input := []int{1, 2, 3, 4, 8, 7, 5, 9, 6}
 
 	// add 10 million values?
-	for i := 10; i <= 10000000; i++ {
-		input = append(input, i)
-	}
+	// for i := 10; i <= 10000000; i++ {
+	// 	input = append(input, i)
+	// }
 	fmt.Println("Done creating array")
 
+	// load them into a map
+	fmt.Println("loading map")
+	indexByLabel = make(map[int]int, 0)
+	for i, v := range input {
+		indexByLabel[v] = i
+	}
+	fmt.Println("Done creating map")
+
 	var currentIndex int
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 100; i++ {
 		fmt.Printf("\n-- move %d\n", i+1)
-		// fmt.Printf("-- cups %+v\n", input)
+		//fmt.Printf("-- cups %+v\n", input)
 		input, currentIndex = executeMove(input, currentIndex)
 	}
 
@@ -28,13 +38,13 @@ func main() {
 }
 
 func executeMove(input []int, currentCupIndex int) ([]int, int) {
-	// fmt.Printf("Current cup %d\n", input[currentCupIndex])
+	//fmt.Printf("Current cup %d\n", input[currentCupIndex])
 	currentCupLabel := input[currentCupIndex]
 	cupsRemoved, newInput := pickUpCups(input, currentCupIndex+1, 3)
-	// fmt.Printf("pick up: %+v\n", cupsRemoved)
+	//fmt.Printf("pick up: %+v\n", cupsRemoved)
 
 	destIndex := determineDestination(currentCupLabel, newInput)
-	// fmt.Printf("destination: %d\n", newInput[destIndex])
+	//fmt.Printf("destination: %d\n", newInput[destIndex])
 
 	result := insertCups(newInput, cupsRemoved, destIndex)
 
@@ -65,10 +75,25 @@ func insertCups(input []int, cupsRemoved []int, destIndex int) []int {
 	return result
 }
 
-func insertAtIndex(input []int, index int, value int) []int {
+func insertAtIndex(input []int, addingIndex int, value int) []int {
+
+	// update the indexes of the map as needed
+	for label, index := range indexByLabel {
+		if index >= addingIndex {
+			//fmt.Printf("ADDING: Setting %d to %d\n", label, index+1)
+			indexByLabel[label] = index + 1
+		}
+	}
+
+	indexByLabel[value] = addingIndex
+	//fmt.Printf("ADDING: Setting value %d to index %d\n", value, addingIndex)
+
 	input = append(input, 0)
-	copy(input[index+1:], input[index:])
-	input[index] = value
+	copy(input[addingIndex+1:], input[addingIndex:])
+	input[addingIndex] = value
+
+	//fmt.Printf("Input afterward %+v\n", input)
+
 	return input
 }
 
@@ -83,25 +108,29 @@ Returns the destination index
 func determineDestination(currentCupLabel int, cups []int) int {
 	desired := currentCupLabel - 1
 
-	// load them into a map
-	max := -1
-	indexByLabel := make(map[int]int, 0)
-	for i, v := range cups {
-		indexByLabel[v] = i
-		if v > max {
-			max = v
-		}
-	}
-
 	// find the destination
 	for i := desired; i > 0; i-- {
+		//fmt.Printf("Looking for a cup with label %d\n", i)
+		//fmt.Printf("cups %+v\n", cups)
+		//fmt.Printf("indexByLabel %+v\n", indexByLabel)
 		if v, ok := indexByLabel[i]; ok {
+			//fmt.Printf("First return index %d, value %d\n", v, cups[v])
 			return v
 		}
 	}
 
 	// didn't find, return max
-	return indexByLabel[max]
+	max := -1
+	maxIndex := -1
+	for i, c := range cups {
+		if c > max {
+			max = c
+			maxIndex = i
+		}
+	}
+
+	//fmt.Printf("Second return max %d\n", max)
+	return maxIndex
 }
 
 func pickUpCups(input []int, startIndex int, numToPickUp int) ([]int, []int) {
@@ -114,18 +143,31 @@ func pickUpCups(input []int, startIndex int, numToPickUp int) ([]int, []int) {
 		val := input[i]
 		cups = append(cups, val)
 		indexesRemoved = append(indexesRemoved, i)
+
+		// remove from the label map
+		delete(indexByLabel, input[i])
 	}
 
-	// remove them
+	// remove them from the input slice
 	sort.Ints(indexesRemoved)
 	for i := len(indexesRemoved) - 1; i >= 0; i-- {
-		input = remove(input, indexesRemoved[i])
+		removingIndex := indexesRemoved[i]
+		input = remove(input, removingIndex)
+
+		// update the indexes of the map as needed
+		for label, index := range indexByLabel {
+			if index > removingIndex {
+				//fmt.Printf("Setting %d to %d\n", label, index-1)
+				indexByLabel[label] = index - 1
+			}
+		}
 	}
+
+	//fmt.Printf("Input afterward %+v\n", input)
 
 	return cups, input
 }
 
 func remove(slice []int, s int) []int {
-	fmt.Printf("Removing index %d of length %d\n", s, len(slice))
 	return append(slice[:s], slice[s+1:]...)
 }
