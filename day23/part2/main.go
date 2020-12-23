@@ -67,8 +67,6 @@ func main() {
 	// connect last with first
 	startNode.prev = prevNode
 	prevNode.next = startNode
-	fmt.Printf("Start node %+v\n", startNode)
-	fmt.Printf("Last node %+v\n", prevNode)
 
 	// run the program
 	currentCup := startNode
@@ -80,7 +78,7 @@ func main() {
 	cup1 := nodeByLabel[1]
 	fmt.Printf("Next after cup 1 %d\n", cup1.next.label)
 	fmt.Printf("2nd cup after cup 1 %d\n", cup1.next.next.label)
-	fmt.Printf("Anwer %d\n", cup1.next.label*cup1.next.next.label)
+	fmt.Printf("Answer %d\n", cup1.next.label*cup1.next.next.label)
 }
 
 func executeMove(currentCup *node) *node {
@@ -140,6 +138,7 @@ func determineDestination(currentCup *node, cupsRemoved []*node) *node {
 
 	// didn't find, return max
 	for i := absoluteMax; i > 0; i-- {
+		// skip the cups removed
 		var wasRemoved bool
 		for _, cr := range cupsRemoved {
 			if cr.label == i {
