@@ -95,16 +95,30 @@ func printCups(n *node) {
 func executeMove(currentCup *node) *node {
 	fmt.Printf("Current cup %d\n", currentCup.label)
 
+	fmt.Println("Cups before picking up")
+	printCups(currentCup)
+	fmt.Println()
+
 	//fmt.Println("called pickup")
 	cupsRemoved := pickUpCups(currentCup.next, 3)
 	//: %+v\n", cupsRemoved)
+	fmt.Println("AFTER removing cups")
+	fmt.Printf("CURRENT CUP %+v\n", currentCup)
+	printCups(currentCup)
+	fmt.Println()
 
 	//fmt.Println("called determine")
 	destCup := determineDestination(currentCup, cupsRemoved)
 	fmt.Printf("destination: %d\n", destCup.label)
 
 	//fmt.Println("called insert")
+	fmt.Println("Inserting cups")
+	printList(cupsRemoved)
 	insertCups(cupsRemoved, destCup)
+
+	fmt.Println("NEW current state")
+	printCups(currentCup)
+	fmt.Println()
 
 	// determine a new currentIndex
 	// if the insert happened before the currentIndex, need to add 3
@@ -129,6 +143,8 @@ func insertAfterNode(afterNode *node, n *node) {
 	afterNode.next = n
 	n.prev = afterNode
 	n.next = nextNodeTmp
+	nextNodeTmp.prev = n
+	fmt.Printf("Seeting previous for node %+v to %+v\n", n, afterNode)
 	//fmt.Printf("Input afterward %+v\n", input)
 }
 
@@ -202,14 +218,22 @@ func printList(cups []*node) {
 }
 
 func pickUpCups(startNode *node, numToPickUp int) []*node {
+	fmt.Printf("Removing starting with node %+v\n", startNode)
+	fmt.Printf("Previous %+v\n", startNode.prev)
+
+	tmp := startNode.prev
+	fmt.Printf("Setting the next of %+v to %+v\n", startNode.prev, startNode.next.next.next)
+	startNode.prev.next = startNode.next.next.next
+	startNode.next.next.next.prev = tmp
+
 	cupsRemoved := make([]*node, 0)
 	for n := startNode; len(cupsRemoved) < numToPickUp; n = n.next {
-		// node %+v\n", n)
+		fmt.Printf("adding removed cup %+v\n", n)
 		cupsRemoved = append(cupsRemoved, n)
 	}
 
 	for _, cr := range cupsRemoved {
-		remove(cr)
+		nullOutNode(cr)
 	}
 
 	//fmt.Printf("Input afterward %+v\n", input)
@@ -217,9 +241,7 @@ func pickUpCups(startNode *node, numToPickUp int) []*node {
 	return cupsRemoved
 }
 
-func remove(n *node) *node {
-	n.prev.next = n.next // set the next of the previous to the next
-	n.next.prev = n.prev // set thep previous of the next to the previous
+func nullOutNode(n *node) *node {
 	n.prev = nil
 	n.next = nil
 
