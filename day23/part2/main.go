@@ -17,9 +17,10 @@ func newNode(label int, prevNode *node) *node {
 	}
 }
 
-var nodeByLabel map[int]*node
-
-var absoluteMax int
+var (
+	nodeByLabel map[int]*node
+	absoluteMax int
+)
 
 const numMoves = 10000000
 
@@ -130,7 +131,6 @@ func determineDestination(currentCup *node, cupsRemoved []*node) *node {
 		// skip the cups removed
 		var wasRemoved bool
 		for _, cr := range cupsRemoved {
-			// cr %d\n", cr.label)
 			if cr.label == i {
 				wasRemoved = true
 				break
