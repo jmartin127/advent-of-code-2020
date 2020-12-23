@@ -53,7 +53,7 @@ func main() {
 	}
 	fmt.Println("Done creating list")
 
-	// load them into a map
+	// load the map so we can lookup by label
 	fmt.Println("loading map")
 	nodeByLabel = make(map[int]*node, 0)
 	currentNode := startNode
@@ -70,21 +70,14 @@ func main() {
 	fmt.Printf("Start node %+v\n", startNode)
 	fmt.Printf("Last node %+v\n", prevNode)
 
+	// run the program
 	currentCup := startNode
 	for i := 0; i < numMoves; i++ {
 		currentCup = executeMove(currentCup)
 	}
 
-	// find cup 1
-	var cup1 *node
-	for true {
-		if currentCup.label == 1 {
-			cup1 = currentCup
-			break
-		}
-		currentCup = currentCup.next
-	}
-
+	// create the answer
+	cup1 := nodeByLabel[1]
 	fmt.Printf("Next after cup 1 %d\n", cup1.next.label)
 	fmt.Printf("2nd cup after cup 1 %d\n", cup1.next.next.label)
 	fmt.Printf("Anwer %d\n", cup1.next.label*cup1.next.next.label)
