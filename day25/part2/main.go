@@ -3,8 +3,11 @@ package main
 import "fmt"
 
 func main() {
+	// sample
 	// cardPubKey := 5764801
 	// doorPubKey := 17807724
+
+	// real
 	cardPubKey := 335121
 	doorPubKey := 363891
 
